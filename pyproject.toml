@@ -12,6 +12,7 @@ readme = "README.md"
 python = ">=3.9, <3.13"
 pandas = "^2.0"
 xarray = "^2024.1"
+xarray-dataclasses = "^1.8"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4"

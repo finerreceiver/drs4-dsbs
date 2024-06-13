@@ -585,7 +585,23 @@ io = ["cftime", "fsspec", "h5netcdf", "netCDF4", "pooch", "pydap", "scipy", "zar
 parallel = ["dask[complete]"]
 viz = ["matplotlib", "nc-time-axis", "seaborn"]
 
+[[package]]
+name = "xarray-dataclasses"
+version = "1.8.0"
+description = "xarray data creation by data classes"
+optional = false
+python-versions = "<3.13,>=3.8"
+files = [
+    {file = "xarray_dataclasses-1.8.0-py3-none-any.whl", hash = "sha256:3d6ce8189775454e8cc08cae33602552d313fedaa5855a693abff29af3f36b01"},
+    {file = "xarray_dataclasses-1.8.0.tar.gz", hash = "sha256:abf80f444422dd987718e4c129ee7e9a302d342994b424d02c08d934a5ea4db6"},
+]
+
+[package.dependencies]
+numpy = {version = ">=1.22,<2.0", markers = "python_version >= \"3.9\" and python_version < \"3.13\""}
+typing-extensions = ">=4.0,<5.0"
+xarray = {version = ">=2022.3,<2025.0", markers = "python_version >= \"3.9\" and python_version < \"3.13\""}
+
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9, <3.13"
-content-hash = "03023946f9dcb2b74158940b0a9ca287053e0598cb30e2f0333eb53cd3d16fa0"
+content-hash = "bfa1377f40f856f137f16492d3755cec2f7619d2fac76dba73d5fd59b6f7999b"
