@@ -1,5 +1,5 @@
-__all__ = ["scpi"]
+__all__ = ["dsbs", "scpi"]
 
 
 # submodules
-from . import scpi
+from . import dsbs, scpi
