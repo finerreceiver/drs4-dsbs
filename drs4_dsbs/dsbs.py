@@ -155,7 +155,6 @@ def download(
     """
     user = user or getenv("DRS4_USER")
     host = host or getenv("DRS4_HOST")
-    password = password or getenv("DRS4_PASSWORD")
 
     cmd_autos = f"cat /home/{user}/DRS4/mrdsppy/output/new_pow.csv"
     cmd_cross = f"cat /home/{user}/DRS4/mrdsppy/output/new_phase.csv"
@@ -181,14 +180,18 @@ def download(
     df_cross = pd.read_csv(StringIO(cp_cross.stdout))
 
     return DSBS.new(
+        # dims
         time=datetime.now(timezone.utc),
         chan=np.arange(len(df_autos)),
+        # coords
         signal_chan=signal_chan,
         signal_SB=signal_SB,
         freq=df_autos["freq[GHz]"],
+        # vars
         auto_USB=df_autos["out0"],
         auto_LSB=df_autos["out1"],
         cross_2SB=df_cross["real"] + 1j * df_cross["imag"],
+        # attrs
         input_num=input_num,
         integ_time=integ_time,
     )
@@ -221,7 +224,6 @@ def measure(
     """
     user = user or getenv("DRS4_USER")
     host = host or getenv("DRS4_HOST")
-    password = password or getenv("DRS4_PASSWORD")
 
     if integ_time not in [100, 200, 500, 1000]:
         raise ValueError("Integration time must be either 100|200|500|1000.")
