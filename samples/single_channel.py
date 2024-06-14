@@ -8,7 +8,7 @@ from drs4_dsbs import download, measure, output
 
 
 def main():
-    signal_chan, nc_file, *_ = argv[1:]
+    signal_chan, output_zarr, *_ = argv[1:]
 
     # Measure CW signal in USB
     signal_SB = "USB"
@@ -37,7 +37,8 @@ def main():
     )
 
     # Save measurements in netCDF
-    xr.concat([ds_usb, ds_lsb], "time").to_netcdf(nc_file)
+    ds = xr.concat([ds_usb, ds_lsb], "time")
+    ds.to_zarr(output_zarr)
 
 
 if __name__ == "__main__":
