@@ -129,7 +129,6 @@ def download(
     # for connection
     user: Optional[str] = None,
     host: Optional[str] = None,
-    password: Optional[str] = None,
     timeout: float = DEFAULT_TIMEOUT,
     # for measurement
     signal_chan: int = 0,
@@ -144,8 +143,6 @@ def download(
             If not specified, environment variable ``DRS4_USER`` will be used.
         host: Host name or IP address of the DRS4.
             If not specified, environment variable ``DRS4_HOST`` will be used.
-        password: Password of the login user.
-            If not specified, environment variable ``DRS4_PASSWORD`` will be used.
         timeout: Timeout of the connection process in seconds.
         signal_chan: Signal channel number (0-1023).
         signal_SB: Signal sideband (USB|LSB).
@@ -164,14 +161,14 @@ def download(
     cmd_cross = f"cat /home/{user}/DRS4/mrdsppy/output/new_phase.csv"
 
     cp_autos = run(
-        f"ssh {user}@{host} -p {password} '{cmd_autos}'",
+        f"ssh {user}@{host} '{cmd_autos}'",
         check=True,
         shell=True,
         text=True,
         timeout=timeout,
     )
     cp_cross = run(
-        f"ssh {user}@{host} -p {password} '{cmd_cross}'",
+        f"ssh {user}@{host} '{cmd_cross}'",
         check=True,
         shell=True,
         text=True,
@@ -200,7 +197,6 @@ def measure(
     # for connection
     user: Optional[str] = None,
     host: Optional[str] = None,
-    password: Optional[str] = None,
     timeout: float = DEFAULT_TIMEOUT,
     # for measurement
     input_num: L[1, 2] = DEFAULT_INPUT_NUM,
@@ -213,8 +209,6 @@ def measure(
             If not specified, environment variable ``DRS4_USER`` will be used.
         host: Host name or IP address of the DRS4.
             If not specified, environment variable ``DRS4_HOST`` will be used.
-        password: Password of the login user.
-            If not specified, environment variable ``DRS4_PASSWORD`` will be used.
         timeout: Timeout of the connection process in seconds.
         input_num: Input (data module) number (1|2).
         integ_time: Integration time in ms (100|200|500|1000).
@@ -236,7 +230,7 @@ def measure(
     )
 
     run(
-        f"ssh {user}@{host} -p {password} '{cmd}'",
+        f"ssh {user}@{host} '{cmd}'",
         check=True,
         shell=True,
         text=True,
