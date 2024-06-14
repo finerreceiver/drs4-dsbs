@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from io import StringIO
 from os import getenv
-from subprocess import run
+from subprocess import PIPE, CompletedProcess, run
 from typing import Literal as L, Optional
 
 
@@ -164,6 +164,7 @@ def download(
         f"ssh {user}@{host} '{cmd_autos}'",
         check=True,
         shell=True,
+        stdout=PIPE,
         text=True,
         timeout=timeout,
     )
@@ -171,6 +172,7 @@ def download(
         f"ssh {user}@{host} '{cmd_cross}'",
         check=True,
         shell=True,
+        stdout=PIPE,
         text=True,
         timeout=timeout,
     )
@@ -201,7 +203,7 @@ def measure(
     # for measurement
     input_num: L[1, 2] = DEFAULT_INPUT_NUM,
     integ_time: L[100, 200, 500, 1000] = DEFAULT_INTEG_TIME,
-) -> None:
+) -> CompletedProcess[str]:
     """Measure auto/cross-correlations.
 
     Args:
@@ -212,6 +214,9 @@ def measure(
         timeout: Timeout of the connection process in seconds.
         input_num: Input (data module) number (1|2).
         integ_time: Integration time in ms (100|200|500|1000).
+
+    Returns:
+        Completed process instance of the measurement.
 
     """
     user = user or getenv("DRS4_USER")
@@ -229,10 +234,11 @@ def measure(
         ]
     )
 
-    run(
+    return run(
         f"ssh {user}@{host} '{cmd}'",
         check=True,
         shell=True,
+        stdout=PIPE,
         text=True,
         timeout=timeout,
     )
