@@ -1,4 +1,5 @@
 # standard library
+from logging import INFO, FileHandler, StreamHandler, basicConfig
 from sys import argv
 from time import sleep
 
@@ -9,6 +10,12 @@ from drs4_dsbs import download, measure, output, stop
 
 
 def main():
+    basicConfig(
+        level=INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+        handlers=(StreamHandler(), FileHandler("single_channel.log")),
+    )
+
     try:
         signal_chan = int(argv[1])
         output_zarr = str(argv[2])
