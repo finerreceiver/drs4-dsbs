@@ -188,9 +188,9 @@ def download(
         signal_SB=signal_SB,
         freq=df_autos["freq[GHz]"],
         # vars
-        auto_USB=df_autos["out0"],
-        auto_LSB=df_autos["out1"],
-        cross_2SB=df_cross["real"] + 1j * df_cross["imag"],
+        auto_USB=[df_autos["out0"]],
+        auto_LSB=[df_autos["out1"]],
+        cross_2SB=[df_cross["real"] + 1j * df_cross["imag"]],
         # attrs
         input_num=input_num,
         integ_time=integ_time,
