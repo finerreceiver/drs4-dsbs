@@ -1,4 +1,4 @@
-__all__ = ["download", "measure", "output"]
+__all__ = ["download", "measure", "output", "stop"]
 
 
 # standard library
@@ -258,7 +258,7 @@ def output(
     LO_freq: float = DEFAULT_LO_FREQ,
     LO_mux: int = DEFAULT_LO_MUX,
 ) -> None:
-    """Output CW signal by setting SG frequency and turning output on.
+    """Output CW signal by setting SG frequency and turning SG output on.
 
     Args:
         host: Host name or IP address of the SG (Keysight 8257D).
@@ -289,6 +289,25 @@ def output(
             f"FREQ:CW {SG_freq}GHZ",
             "OUTP ON",
         ],
+        host=host,
+        port=int(port),
+        timeout=timeout,
+    )
+
+
+def stop(
+    *,
+    # for connection,
+    host: Optional[str] = None,
+    port: Optional[int] = None,
+    timeout: float = DEFAULT_TIMEOUT,
+) -> None:
+    """Stop CW signal by setting turning SG output off."""
+    host = host or getenv("SG_HOST")
+    port = port or getenv("SG_PORT")
+
+    send_commands(
+        "OUTP OFF",
         host=host,
         port=int(port),
         timeout=timeout,
