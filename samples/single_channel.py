@@ -1,5 +1,6 @@
 # standard library
 from sys import argv
+from time import sleep
 
 
 # dependencies
@@ -18,6 +19,7 @@ def main():
         signal_chan=signal_chan,
         signal_SB=signal_SB,
     )
+    sleep(1)
     measure()
     ds_usb = download(
         signal_chan=signal_chan,
@@ -31,6 +33,7 @@ def main():
         signal_chan=signal_chan,
         signal_SB=signal_SB,
     )
+    sleep(1)
     measure()
     ds_lsb = download(
         signal_chan=signal_chan,
