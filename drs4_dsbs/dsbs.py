@@ -1,4 +1,4 @@
-__all__ = ["download", "measure"]
+__all__ = ["download", "measure", "output"]
 
 
 # standard library
@@ -15,13 +15,18 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from xarray_dataclasses import AsDataset, Attr, Coordof, Data, Dataof
+from .scpi import send_commands
 
 
 # constants
+FREQ_INTERVAL = 0.02  # GHz
 DEFAULT_INPUT_NUM = 1
 DEFAULT_INTEG_TIME = 1000
+DEFAULT_LO_FREQ = 90.0  # GHz
+DEFAULT_LO_MUX = 5
+DEFAULT_SIGNAL_CHAN = 0
 DEFAULT_SIGNAL_SB = "USB"
-DEFAULT_TIMEOUT = 10.0
+DEFAULT_TIMEOUT = 10.0  # s
 
 
 # data classes (dims)
@@ -93,9 +98,9 @@ class DSBS(AsDataset):
 
     # coords
     signal_chan: Coordof[SignalChan]
-    """Signal channel number."""
+    """Signal channel number (0-1023)."""
 
-    signal_sb: Coordof[SignalSB]
+    signal_SB: Coordof[SignalSB]
     """Signal sideband (USB|LSB)."""
 
     freq: Coordof[Freq]
@@ -128,7 +133,7 @@ def download(
     timeout: float = DEFAULT_TIMEOUT,
     # for measurement
     signal_chan: int = 0,
-    signal_sb: L["USB", "LSB"] = DEFAULT_SIGNAL_SB,
+    signal_SB: L["USB", "LSB"] = DEFAULT_SIGNAL_SB,
     input_num: L[1, 2] = DEFAULT_INPUT_NUM,
     integ_time: L[100, 200, 500, 1000] = DEFAULT_INTEG_TIME,
 ) -> xr.Dataset:
@@ -142,8 +147,8 @@ def download(
         password: Password of the login user.
             If not specified, environment variable ``DRS4_PASSWORD`` will be used.
         timeout: Timeout of the connection process in seconds.
-        signal_chan: Signal channel number.
-        signal_sb: Signal sideband (USB|LSB).
+        signal_chan: Signal channel number (0-1023).
+        signal_SB: Signal sideband (USB|LSB).
         input_num: Input (data module) number (1|2).
         integ_time: Integration time in ms (100|200|500|1000).
 
@@ -180,7 +185,7 @@ def download(
         time=datetime.now(UTC),
         chan=np.arange(len(df_autos)),
         signal_chan=signal_chan,
-        signal_sb=signal_sb,
+        signal_SB=signal_SB,
         freq=df_autos["freq[GHz]"],
         auto_USB=df_autos["out0"],
         auto_LSB=df_autos["out1"],
@@ -235,5 +240,54 @@ def measure(
         check=True,
         shell=True,
         text=True,
+        timeout=timeout,
+    )
+
+
+def output(
+    *,
+    # for connection,
+    host: Optional[str] = None,
+    port: Optional[int] = None,
+    timeout: float = DEFAULT_TIMEOUT,
+    # for frequency
+    signal_chan: int = DEFAULT_SIGNAL_CHAN,
+    signal_SB: L["USB", "LSB"] = DEFAULT_SIGNAL_SB,
+    LO_freq: float = DEFAULT_LO_FREQ,
+    LO_mux: int = DEFAULT_LO_MUX,
+) -> None:
+    """Output CW signal by setting SG frequency and turning output on.
+
+    Args:
+        host: Host name or IP address of the SG (Keysight 8257D).
+            If not specified, environment variable ``SG_HOST`` will be used.
+        port: Port number of the SG (Keysight 8257D).
+            If not specified, environment variable ``SG_PORT`` will be used.
+        timeout: Timeout of the connection process in seconds.
+        signal_chan: Signal channel number (0-1023).
+        signal_SB: Signal sideband (USB|LSB).
+        LO_freq: LO frequency in GHz.
+        LO_mux: LO multiplication factor.
+
+    """
+    host = host or getenv("SG_HOST")
+    port = port or getenv("SG_PORT")
+
+    if signal_SB == "USB":
+        SG_freq = (LO_freq + FREQ_INTERVAL * signal_chan) / LO_mux
+    elif signal_SB == "LSB":
+        SG_freq = (LO_freq - FREQ_INTERVAL * signal_chan) / LO_mux
+    else:
+        raise ValueError("Signal sideband must be either USB|LSB.")
+
+    send_commands(
+        [
+            "OUTP OFF",
+            "FREQ:MODE CW",
+            f"FREQ:CW {SG_freq}GHZ",
+            "OUTP ON",
+        ],
+        host=host,
+        port=int(port),
         timeout=timeout,
     )
