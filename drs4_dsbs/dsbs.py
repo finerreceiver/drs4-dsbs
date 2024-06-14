@@ -3,7 +3,7 @@ __all__ = ["download", "measure", "output"]
 
 # standard library
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from io import StringIO
 from os import getenv
 from subprocess import run
@@ -182,7 +182,7 @@ def download(
     df_cross = pd.read_csv(StringIO(cp_cross.stdout))
 
     return DSBS.new(
-        time=datetime.now(UTC),
+        time=datetime.now(timezone.utc),
         chan=np.arange(len(df_autos)),
         signal_chan=signal_chan,
         signal_SB=signal_SB,
