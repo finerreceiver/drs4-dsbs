@@ -86,8 +86,8 @@ class Cross2SB:
 
 # data class (dataset)
 @dataclass
-class DSBS(AsDataset):
-    """Digital sideband measurement set."""
+class Correlations(AsDataset):
+    """Auto/cross correlations for digital sideband separation."""
 
     # dims
     time: Coordof[Time]
@@ -179,7 +179,7 @@ def download(
     df_autos = pd.read_csv(StringIO(cp_autos.stdout))
     df_cross = pd.read_csv(StringIO(cp_cross.stdout))
 
-    return DSBS.new(
+    return Correlations.new(
         # dims
         time=datetime.now(timezone.utc),
         chan=np.arange(len(df_autos)),
