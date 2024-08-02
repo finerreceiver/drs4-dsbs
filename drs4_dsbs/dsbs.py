@@ -84,6 +84,20 @@ class Cross2SB:
     units: Attr[str] = "Arbitrary unit"
 
 
+@dataclass
+class GainUSB:
+    data: Data[L["chan"], np.complex128]
+    long_name: Attr[str] = "Complex gain of USB"
+    units: Attr[str] = "Arbitrary unit"
+
+
+@dataclass
+class GainLSB:
+    data: Data[L["chan"], np.complex128]
+    long_name: Attr[str] = "Complex gain of LSB"
+    units: Attr[str] = "Arbitrary unit"
+
+
 # data class (dataset)
 @dataclass
 class Correlations(AsDataset):
@@ -115,6 +129,33 @@ class Correlations(AsDataset):
 
     cross_2SB: Dataof[Cross2SB]
     """Cross-correlation between USB and LSB."""
+
+    # attrs
+    input_num: Attr[L[1, 2]]
+    """Input (data module) number (1|2)."""
+
+    integ_time: Attr[L[100, 200, 500, 1000]]
+    """Integration time in ms (100|200|500|1000)."""
+
+
+@dataclass
+class Gains(AsDataset):
+    """Complex gains for digital sideband separation."""
+
+    # dims
+    chan: Coordof[Chan]
+    """Channel number."""
+
+    # coords
+    freq: Coordof[Freq]
+    """Measured frequency (GHz)."""
+
+    # vars
+    gain_USB: Dataof[GainUSB]
+    """Complex gain of USB."""
+
+    gain_LSB: Dataof[AutoLSB]
+    """Complex gain of LSB."""
 
     # attrs
     input_num: Attr[L[1, 2]]
