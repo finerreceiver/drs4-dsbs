@@ -1,11 +1,18 @@
 {
     "name": "drs4-dsbs",
-    "image":"python:3.12",
-    "onCreateCommand": "pip install poetry==1.8.3",
-    "postCreateCommand": "poetry install",
+    "image": "python:3.12",
+    "features": {
+        "ghcr.io/devcontainers-contrib/features/poetry:2": {
+            "version": "1.8.3"
+        }
+    },
     "containerEnv": {
         "POETRY_VIRTUALENVS_CREATE": "false"
     },
+    "runArgs": [
+        "--name=drs4-dsbs"
+    ],
+    "postCreateCommand": "poetry install",
     "customizations": {
         "vscode": {
             "extensions": [
