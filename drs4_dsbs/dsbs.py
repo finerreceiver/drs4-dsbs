@@ -1,4 +1,4 @@
-__all__ = ["download", "measure", "output", "stop"]
+__all__ = ["download", "estimate", "measure", "output", "stop"]
 
 
 # standard library
@@ -154,7 +154,7 @@ class Gains(AsDataset):
     gain_USB: Dataof[GainUSB]
     """Complex gain of USB."""
 
-    gain_LSB: Dataof[AutoLSB]
+    gain_LSB: Dataof[GainLSB]
     """Complex gain of LSB."""
 
     # attrs
@@ -235,6 +235,32 @@ def download(
         # attrs
         input_num=input_num,
         integ_time=integ_time,
+    )
+
+
+def estimate(corrs: xr.Dataset, /) -> xr.Dataset:
+    """Estimate complex gains from auto/cross-correlations.
+
+    Args:
+        corrs: Dataset of the measured auto/cross-correlations.
+
+    Returns:
+        Dataset of the estimated complex gains.
+
+    """
+    masked = corrs.where(corrs.chan == corrs.signal_chan)
+    masked_USB = masked.where(masked.signal_SB == "USB", drop=True)
+    masked_LSB = masked.where(masked.signal_SB == "LSB", drop=True)
+    gain_USB = -(masked_USB.cross_2SB / masked_USB.auto_USB).conj()
+    gain_LSB = -(masked_LSB.cross_2SB / masked_LSB.auto_LSB)
+
+    return Gains.new(
+        chan=corrs.chan,
+        freq=corrs.freq,
+        gain_USB=gain_USB.mean("time").fillna(0),
+        gain_LSB=gain_LSB.mean("time").fillna(0),
+        input_num=corrs.input_num,
+        integ_time=corrs.integ_time,
     )
 
 
