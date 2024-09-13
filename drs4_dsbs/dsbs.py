@@ -23,7 +23,7 @@ FREQ_INTERVAL = 0.02  # GHz
 DEFAULT_INPUT_NUM = 1
 DEFAULT_INTEG_TIME = 1000
 DEFAULT_LO_FREQ = 90.0  # GHz
-DEFAULT_LO_MUX = 5
+DEFAULT_LO_MULT = 5
 DEFAULT_SIGNAL_CHAN = 0
 DEFAULT_SIGNAL_SB = "USB"
 DEFAULT_TIMEOUT = 30.0  # s
@@ -323,7 +323,7 @@ def output(
     signal_chan: int = DEFAULT_SIGNAL_CHAN,
     signal_SB: L["USB", "LSB"] = DEFAULT_SIGNAL_SB,
     LO_freq: float = DEFAULT_LO_FREQ,
-    LO_mux: int = DEFAULT_LO_MUX,
+    LO_mult: int = DEFAULT_LO_MULT,
 ) -> None:
     """Output CW signal by setting SG frequency and turning SG output on.
 
@@ -336,16 +336,16 @@ def output(
         signal_chan: Signal channel number (0-1023).
         signal_SB: Signal sideband (USB|LSB).
         LO_freq: LO frequency in GHz.
-        LO_mux: LO multiplication factor.
+        LO_mult: LO multiplication factor.
 
     """
     host = host or getenv("SG_HOST")
     port = port or getenv("SG_PORT")
 
     if signal_SB == "USB":
-        SG_freq = (LO_freq + FREQ_INTERVAL * signal_chan) / LO_mux
+        SG_freq = (LO_freq + FREQ_INTERVAL * signal_chan) / LO_mult
     elif signal_SB == "LSB":
-        SG_freq = (LO_freq - FREQ_INTERVAL * signal_chan) / LO_mux
+        SG_freq = (LO_freq - FREQ_INTERVAL * signal_chan) / LO_mult
     else:
         raise ValueError("Signal sideband must be either USB|LSB.")
 
