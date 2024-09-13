@@ -1,4 +1,4 @@
-__all__ = ["download", "measure", "output", "stop"]
+__all__ = ["download", "estimate", "measure", "output", "stop"]
 
 
 # standard library
@@ -22,8 +22,6 @@ from .scpi import send_commands
 FREQ_INTERVAL = 0.02  # GHz
 DEFAULT_INPUT_NUM = 1
 DEFAULT_INTEG_TIME = 1000
-DEFAULT_LO_FREQ = 90.0  # GHz
-DEFAULT_LO_MUX = 5
 DEFAULT_SIGNAL_CHAN = 0
 DEFAULT_SIGNAL_SB = "USB"
 DEFAULT_TIMEOUT = 30.0  # s
@@ -84,10 +82,24 @@ class Cross2SB:
     units: Attr[str] = "Arbitrary unit"
 
 
+@dataclass
+class GainUSB:
+    data: Data[L["chan"], np.complex128]
+    long_name: Attr[str] = "Complex gain of USB"
+    units: Attr[str] = "Arbitrary unit"
+
+
+@dataclass
+class GainLSB:
+    data: Data[L["chan"], np.complex128]
+    long_name: Attr[str] = "Complex gain of LSB"
+    units: Attr[str] = "Arbitrary unit"
+
+
 # data class (dataset)
 @dataclass
-class DSBS(AsDataset):
-    """Digital sideband measurement set."""
+class Correlations(AsDataset):
+    """Auto/cross correlations for digital sideband separation."""
 
     # dims
     time: Coordof[Time]
@@ -115,6 +127,33 @@ class DSBS(AsDataset):
 
     cross_2SB: Dataof[Cross2SB]
     """Cross-correlation between USB and LSB."""
+
+    # attrs
+    input_num: Attr[L[1, 2]]
+    """Input (data module) number (1|2)."""
+
+    integ_time: Attr[L[100, 200, 500, 1000]]
+    """Integration time in ms (100|200|500|1000)."""
+
+
+@dataclass
+class Gains(AsDataset):
+    """Complex gains for digital sideband separation."""
+
+    # dims
+    chan: Coordof[Chan]
+    """Channel number."""
+
+    # coords
+    freq: Coordof[Freq]
+    """Measured frequency (GHz)."""
+
+    # vars
+    gain_USB: Dataof[GainUSB]
+    """Complex gain of USB."""
+
+    gain_LSB: Dataof[GainLSB]
+    """Complex gain of LSB."""
 
     # attrs
     input_num: Attr[L[1, 2]]
@@ -179,7 +218,7 @@ def download(
     df_autos = pd.read_csv(StringIO(cp_autos.stdout))
     df_cross = pd.read_csv(StringIO(cp_cross.stdout))
 
-    return DSBS.new(
+    return Correlations.new(
         # dims
         time=datetime.now(timezone.utc),
         chan=np.arange(len(df_autos)),
@@ -194,6 +233,32 @@ def download(
         # attrs
         input_num=input_num,
         integ_time=integ_time,
+    )
+
+
+def estimate(corrs: xr.Dataset, /) -> xr.Dataset:
+    """Estimate complex gains from auto/cross-correlations.
+
+    Args:
+        corrs: Dataset of the measured auto/cross-correlations.
+
+    Returns:
+        Dataset of the estimated complex gains.
+
+    """
+    masked = corrs.where(corrs.chan == corrs.signal_chan)
+    masked_USB = masked.where(masked.signal_SB == "USB", drop=True)
+    masked_LSB = masked.where(masked.signal_SB == "LSB", drop=True)
+    gain_USB = -(masked_USB.cross_2SB / masked_USB.auto_USB).conj()
+    gain_LSB = -(masked_LSB.cross_2SB / masked_LSB.auto_LSB)
+
+    return Gains.new(
+        chan=corrs.chan,
+        freq=corrs.freq,
+        gain_USB=gain_USB.mean("time").fillna(0),
+        gain_LSB=gain_LSB.mean("time").fillna(0),
+        input_num=corrs.input_num,
+        integ_time=corrs.integ_time,
     )
 
 
@@ -253,10 +318,10 @@ def output(
     port: Optional[int] = None,
     timeout: float = DEFAULT_TIMEOUT,
     # for frequency
+    lo_freq: Optional[float] = None,
+    lo_mult: Optional[int] = None,
     signal_chan: int = DEFAULT_SIGNAL_CHAN,
     signal_SB: L["USB", "LSB"] = DEFAULT_SIGNAL_SB,
-    LO_freq: float = DEFAULT_LO_FREQ,
-    LO_mux: int = DEFAULT_LO_MUX,
 ) -> None:
     """Output CW signal by setting SG frequency and turning SG output on.
 
@@ -266,19 +331,23 @@ def output(
         port: Port number of the SG (Keysight 8257D).
             If not specified, environment variable ``SG_PORT`` will be used.
         timeout: Timeout of the connection process in seconds.
+        lo_freq: LO frequency in GHz.
+            If not specified, environment variable ``LO_FREQ`` will be used.
+        lo_mult: LO multiplication factor.
+            If not specified, environment variable ``LO_MULT`` will be used.
         signal_chan: Signal channel number (0-1023).
         signal_SB: Signal sideband (USB|LSB).
-        LO_freq: LO frequency in GHz.
-        LO_mux: LO multiplication factor.
 
     """
     host = host or getenv("SG_HOST")
     port = port or getenv("SG_PORT")
+    lo_freq = float(lo_freq or getenv("LO_FREQ"))
+    lo_mult = int(lo_mult or getenv("LO_MULT"))
 
     if signal_SB == "USB":
-        SG_freq = (LO_freq + FREQ_INTERVAL * signal_chan) / LO_mux
+        sg_freq = (lo_freq + FREQ_INTERVAL * signal_chan) / lo_mult
     elif signal_SB == "LSB":
-        SG_freq = (LO_freq - FREQ_INTERVAL * signal_chan) / LO_mux
+        sg_freq = (lo_freq - FREQ_INTERVAL * signal_chan) / lo_mult
     else:
         raise ValueError("Signal sideband must be either USB|LSB.")
 
@@ -286,7 +355,7 @@ def output(
         [
             "OUTP OFF",
             "FREQ:MODE CW",
-            f"FREQ:CW {SG_freq}GHZ",
+            f"FREQ:CW {sg_freq}GHz",
             "OUTP ON",
         ],
         host=host,
